@@ -1,0 +1,33 @@
+# Python bytecode & environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Generated data & artifacts
+outputs/*
+!outputs/.gitkeep
+features.csv
+sensor_data.csv
+models.pkl
+lstm_weights.npz
+norm_stats.json
+top_features.json
+model_results.json
+confidence_results.json
+confidence_calibration.png
+feature_importance.png
+model_validation_summary.png
+preview_20days.png
+AgriTwin_Simulation_Report.html
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Pytest / coverage
+.pytest_cache/
+.coverage

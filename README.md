@@ -4,13 +4,15 @@ End-to-end simulation of the **AgriTwin AI** pipeline: synthetic multi-sensor te
 
 ```mermaid
 flowchart LR
-    A[Synthetic Telemetry\n5-min Sensors + Noise] --> B[DTSM Feature Fusion\nEWMA + Multi-Horizon Lags + VPD]
-    B --> C1[Random Forest\nIrrigation Trigger]
-    B --> C2[SVM (RBF Kernel)\nCrop Stress Anomaly]
-    B --> C3[NumPy LSTM\n3-Day Moisture Trend]
-    C1 & C2 & C3 --> D[Confidence Calibration\nTree-Votes, Platt, MC-Dropout]
-    D --> E1[Interactive Streamlit Dashboard\n5-Tab Analytics & Sandbox]
-    D --> E2[Static Executive Report\nSelf-Contained HTML Backup]
+    A["Synthetic Telemetry<br/>5-min Sensors + Noise"] --> B["DTSM Feature Fusion<br/>EWMA + Multi-Horizon Lags + VPD"]
+    B --> C1["Random Forest<br/>Irrigation Trigger"]
+    B --> C2["SVM (RBF Kernel)<br/>Crop Stress Anomaly"]
+    B --> C3["NumPy LSTM<br/>3-Day Moisture Trend"]
+    C1 --> D["Confidence Calibration<br/>Tree-Votes, Platt, MC-Dropout"]
+    C2 --> D
+    C3 --> D
+    D --> E1["Interactive Streamlit Dashboard<br/>5-Tab Analytics and Sandbox"]
+    D --> E2["Static Executive Report<br/>Self-Contained HTML Backup"]
 ```
 
 > **Important:** This is a **software simulation**, using synthetic data generated with realistic agronomic physics (evapotranspiration, diurnal cycles, vapor pressure deficit, decay curves). All model metrics are computed live by actually training on this dataset — genuine numbers from executable code.
@@ -98,4 +100,4 @@ If Streamlit cannot be launched on presentation day, simply double-click **`Agri
 - **Physics-Grounded DTSM**: Accounts for diurnal thermal cycles, Vapor Pressure Deficit (VPD), exponential moisture decay, and precipitation infiltration.
 - **Uncertainty Quantification**: Model-appropriate confidence estimators (tree-vote agreement for RF, Platt probability scaling for SVM, and stochastic dropout forward passes for LSTM).
 
-"# AgriTwin-AI" 
+ 

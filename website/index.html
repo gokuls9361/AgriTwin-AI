@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriTwin AI — Modular Crop Digital Twin Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}]});"></script>
+</head>
+<body>
+
+  <!-- Background Particle Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="#" class="logo">
+      <div class="logo-icon">🌱</div>
+      <span>AgriTwin AI</span>
+    </a>
+
+    <div class="nav-actions">
+      <a href="http://localhost:8501" target="_blank" class="cta-btn">Open Streamlit App ➔</a>
+    </div>
+  </nav>
+
+  <!-- App Main Content Container -->
+  <div class="app-container">
+
+    <!-- Global 4-Zone Sector Selector Bar (Click Any to Instantly Change Active Zone) -->
+    <div class="global-zone-bar">
+      <span class="zone-bar-title">📍 SELECT FARM SECTOR:</span>
+      <div class="zone-pill-group">
+        <button class="zone-pill" data-zone="1">
+          <span class="zone-dot" style="background:#d97706;"></span>
+          <strong>Zone 1</strong>: Sandy Loam (West)
+        </button>
+        <button class="zone-pill active" data-zone="2">
+          <span class="zone-dot" style="background:#10b981;"></span>
+          <strong>Zone 2</strong>: Clay Loam (East - Primary)
+        </button>
+        <button class="zone-pill" data-zone="3">
+          <span class="zone-dot" style="background:#0284c7;"></span>
+          <strong>Zone 3</strong>: Alluvial Basin (South)
+        </button>
+        <button class="zone-pill" data-zone="4">
+          <span class="zone-dot" style="background:#ea580c;"></span>
+          <strong>Zone 4</strong>: Ridge (North Slope)
+        </button>
+      </div>
+    </div>
+
+    <!-- Concept Navigation Bar (One Concept In One Place) -->
+    <div class="concept-nav-wrapper">
+      <button class="concept-tab-btn active" data-concept="twin">
+        <span>🛰️</span> 1. Digital Twin Cockpit
+      </button>
+      <button class="concept-tab-btn" data-concept="ai">
+        <span>🤖</span> 2. AI Decision Suite
+      </button>
+      <button class="concept-tab-btn" data-concept="spatial">
+        <span>🗺️</span> 3. 4-Zone Spatial Map
+      </button>
+      <button class="concept-tab-btn" data-concept="irrigation">
+        <span>🚜</span> 4. Smart Irrigation & Carbon
+      </button>
+      <button class="concept-tab-btn" data-concept="sandbox">
+        <span>🎮</span> 5. Stress Sandbox
+      </button>
+      <button class="concept-tab-btn" data-concept="architecture">
+        <span>🔬</span> 6. Architecture & DTSM
+      </button>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 1: Digital Twin Simulation & Live Biome Cockpit -->
+    <!-- ================================================================= -->
+    <div class="concept-panel active" id="view-twin">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🛰️ Autonomous Digital Twin Simulation</h2>
+            <p>Physics-grounded microclimate sensing, root-zone hydrology, and real-time vegetative state tracking.</p>
+          </div>
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Active Sector:</span>
+            <span class="active-zone-label" style="background: #d1fae5; color: #065f46; padding: 4px 14px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; border: 1px solid #6ee7b7;">Zone 2: Clay Loam (Optimal)</span>
+          </div>
+        </div>
+
+        <!-- Virtual Simulation Clock Strip & Bidirectional Step Controls -->
+        <div class="sim-clock-strip">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <strong>🕒 Virtual Clock:</strong> 
+              <code id="clock-timestamp" style="background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 6px; font-weight: 700; font-size: 0.95rem;">Season Day 42/90 • 14:25 UTC</code>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.2); padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; border: 1px solid rgba(16, 185, 129, 0.4);">
+              Stage: <strong id="clock-stage-badge" style="color: #a7f3d0;">3_Flowering</strong>
+            </div>
+          </div>
+
+          <div class="sim-controls">
+            <button class="sim-btn" id="stream-prev-day-btn" onclick="advanceTime(-1440)" title="Jump back 24 hours">⏪ Prev Day</button>
+            <button class="sim-btn" id="stream-step-back-btn" onclick="advanceTime(-60)" title="Step back 1 hour">⏮️ -1h</button>
+            <button class="sim-btn" id="stream-toggle-btn" onclick="toggleAutoStream()">▶️ Auto-Stream</button>
+            <button class="sim-btn" id="stream-step-btn" onclick="advanceTime(60)" title="Step forward 1 hour">⏭️ +1h</button>
+            <button class="sim-btn" id="stream-next-day-btn" onclick="advanceTime(1440)" title="Jump forward 24 hours">⏩ Next Day</button>
+          </div>
+        </div>
+
+        <!-- 90-Day Interactive Season Timeline Scrubber -->
+        <div class="timeline-scrubber-box">
+          <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">
+            <span>🌱 Day 1 (Emergence)</span>
+            <span style="color: var(--accent); font-size: 0.88rem;">📍 Scrub Timeline to Inspect Any Past/Future Day: <strong id="scrubber-label" style="color: var(--primary); background: #d1fae5; padding: 2px 8px; border-radius: 8px;">Day 42</strong></span>
+            <span>🌾 Day 90 (Maturity)</span>
+          </div>
+          <input type="range" id="season-scrubber" min="1" max="90" value="42" step="1" style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+          <div class="stage-ticks">
+            <span>Day 1-10: Emergence</span>
+            <span>Day 11-35: Vegetative</span>
+            <span>Day 36-60: Flowering</span>
+            <span>Day 61-80: Grain Fill</span>
+            <span>Day 81-90: Maturity</span>
+          </div>
+        </div>
+
+        <!-- Telemetry Gauges Grid -->
+        <div class="telemetry-grid">
+          <div class="dial-card active-accent">
+            <div class="dial-title">Root Moisture (10-30cm)</div>
+            <div class="dial-value val-moisture">26.5%</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Target: 28.0% | Wilting: 20.0%</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill bar-moist" style="width: 53%;"></div></div>
+          </div>
+
+          <div class="dial-card">
+            <div class="dial-title">Canopy Air Temperature</div>
+            <div class="dial-value val-temp">28.0°C</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Optimal Photosynthesis (22-30°C)</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill bar-temp" style="width: 58%;"></div></div>
+          </div>
+
+          <div class="dial-card">
+            <div class="dial-title">Atmospheric VPD</div>
+            <div class="dial-value val-vpd">1.60 kPa</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Transpiration Demand: Moderate</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill bar-vpd" style="width: 45%;"></div></div>
+          </div>
+
+          <div class="dial-card">
+            <div class="dial-title">NDVI Greenness Index</div>
+            <div class="dial-value val-ndvi">0.78</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Chlorophyll Vigor: High</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill bar-ndvi" style="width: 78%;"></div></div>
+          </div>
+
+          <div class="dial-card">
+            <div class="dial-title">Heat Accumulation (GDD)</div>
+            <div class="dial-value val-gdd">620 °C-d</div>
+            <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">Stage: Flowering (T_base=10°C)</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill" style="width: 62%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div></div>
+          </div>
+
+          <div class="dial-card">
+            <div class="dial-title">Soil pH (Electro-Chemistry)</div>
+            <div class="dial-value val-ph">6.6</div>
+            <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">Optimal Nutrient Bioavailability (6.0–7.0)</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill bar-ph" style="width: 66%; background: linear-gradient(90deg, #3b82f6, #10b981);"></div></div>
+          </div>
+        </div>
+
+        <!-- Biome Canvas & Physics Display -->
+        <div class="biome-container">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="color: var(--primary);">🌱 Procedural Animated Canopy & Soil Depth Biome</h4>
+              <span id="biome-zone-badge" style="background:#e8f5e9; color:#1b4332; font-weight:700; padding:2px 10px; border-radius:12px; font-size:0.8rem;">Zone 2: Clay Loam</span>
+            </div>
+            <canvas id="biome-canvas"></canvas>
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;">
+              <span>🌾 Stage: <strong id="biome-stage-text">3_Flowering</strong></span>
+              <span id="biome-soil-type">Soil: <strong>Clay Loam (34% FC)</strong></span>
+              <span id="biome-priority">Priority: <strong style="color:#10b981;">Nominal</strong></span>
+            </div>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px;">
+            <h4 style="color: var(--primary); margin-bottom: 12px;">🔬 Physical Modeling Mechanics</h4>
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 12px; line-height: 1.5;">
+              The digital twin continuously models <strong>3-layer vertical soil hydrology</strong>:
+            </p>
+            <ul style="font-size: 0.88rem; color: #334155; padding-left: 18px; line-height: 1.6;">
+              <li><strong>Topsoil (0–10cm):</strong> Rapid storm infiltration and diurnal surface evaporation.</li>
+              <li><strong>Root Zone (10–30cm):</strong> Active root transpiration extraction and targeted control layer.</li>
+              <li><strong>Deep Subsoil (30–60cm):</strong> Deep percolation buffering and groundwater recharge.</li>
+            </ul>
+            <div style="margin-top: 16px; padding: 12px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid var(--accent); font-size: 0.85rem; color: #065f46;">
+              <strong>Tetens' VPD Formulation:</strong> \( e_s = 0.61078 \exp\left(\frac{17.27 T}{T + 237.3}\right) \), \( \text{VPD} = e_s \cdot (1 - \text{RH}/100) \).
+            </div>
+          </div>
+        </div>
+
+        <!-- 📜 Past Telemetry History Drawer -->
+        <div class="history-container">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="color: var(--primary);">📜 Previous 7 Days Telemetry & Historical Log</h4>
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Comparing Past Days against Current Virtual Day</span>
+          </div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Season Day</th>
+                <th>Growth Stage</th>
+                <th>Mean Moisture</th>
+                <th>Mean Temp</th>
+                <th>24h Rain</th>
+                <th>GDD (Heat Units)</th>
+                <th>AI Decision Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Dynamically populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 2: AI Multi-Model Decision Suite -->
+    <!-- ================================================================= -->
+    <div class="concept-panel" id="view-ai">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🤖 Multi-Model Machine Learning Decision Suite</h2>
+            <p>Three specialized machine learning architectures operating in concert with uncertainty quantification.</p>
+          </div>
+        </div>
+
+        <div class="ai-triad-grid">
+          <!-- Model 1: Random Forest -->
+          <div class="ai-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 style="color: var(--primary);">💧 Random Forest Classifier</h4>
+              <span style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 10px;">150 Trees</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Predicts exact root-zone water deficit and irrigation triggers.</p>
+            <div class="ai-tag tag-optimal rf-badge">✅ NO IRRIGATION NEEDED</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill rf-bar" style="width: 88%;"></div></div>
+            <small class="rf-conf-text" style="color: var(--text-muted); display: block; margin-top: 8px; font-weight: 600;">Tree-Vote Consensus: 88.0%</small>
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <div style="font-size: 0.82rem; color: #475569;">
+              <strong>Benchmark:</strong> 85.5% Accuracy | 96.8% Recall | 0.917 F1
+            </div>
+          </div>
+
+          <!-- Model 2: SVM Anomaly -->
+          <div class="ai-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 style="color: var(--primary);">🚨 Support Vector Machine</h4>
+              <span style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 10px;">RBF Kernel</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Detects acute crop heat stress, waterlogging, or sensor freeze anomalies.</p>
+            <div class="ai-tag tag-normal svm-badge">🟢 CANOPY STATE NORMAL</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill svm-bar" style="width: 95%;"></div></div>
+            <small class="svm-conf-text" style="color: var(--text-muted); display: block; margin-top: 8px; font-weight: 600;">Platt-Scaled Confidence: 95.0%</small>
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <div style="font-size: 0.82rem; color: #475569;">
+              <strong>Benchmark:</strong> 97.4% Accuracy | 81.6% Recall | Brier: 0.11
+            </div>
+          </div>
+
+          <!-- Model 3: Pure NumPy LSTM -->
+          <div class="ai-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h4 style="color: var(--primary);">📈 Pure NumPy LSTM</h4>
+              <span style="font-size: 0.75rem; background: #f1f5f9; padding: 2px 8px; border-radius: 10px;">3-Day Horizon</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Recurrent sequence model trained with Backpropagation Through Time.</p>
+            <div style="font-size: 1.45rem; font-weight: 900; color: var(--primary); margin: 10px 0;" class="lstm-val">22.6% ± 0.85%</div>
+            <div class="dial-bar-bg"><div class="dial-bar-fill lstm-bar" style="width: 85%;"></div></div>
+            <small class="lstm-conf-text" style="color: var(--text-muted); display: block; margin-top: 8px; font-weight: 600;">MC-Dropout Uncertainty Band: ±0.85%</small>
+            <hr style="margin: 14px 0; border: none; border-top: 1px solid #e2e8f0;">
+            <div style="font-size: 0.82rem; color: #475569;">
+              <strong>Benchmark:</strong> 0.68% Test MAE | 1.18% Test RMSE
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 3: 4-Zone Spatial Micro-Plot Farm Explorer -->
+    <!-- ================================================================= -->
+    <div class="concept-panel" id="view-spatial">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🗺️ 4-Zone Spatial Micro-Plot Farm Explorer</h2>
+            <p>Select any micro-plot to inspect heterogeneous soil textures, drainage velocities, and targeted water volume.</p>
+          </div>
+          <div>
+            <span class="active-zone-label" style="background: #d1fae5; color: #065f46; padding: 4px 14px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; border: 1px solid #6ee7b7;">Zone 2: Clay Loam (Optimal)</span>
+          </div>
+        </div>
+
+        <div class="zone-grid-4">
+          <div class="zone-interactive-card" id="zone-tile-1" onclick="selectZone(1)">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h4 style="color: var(--primary);">Zone 1: Sandy Loam (West Plot)</h4>
+              <div>
+                <span style="font-size: 0.82rem; background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-right: 6px;">pH 6.2</span>
+                <span style="font-size: 1.25rem; font-weight: 900; color: #d97706;" id="tile-m-1">17.5%</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Coarse particle matrix, rapid percolation, slightly acidic (22% Field Capacity).</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #d97706;">Priority: HIGH (Rapid Drainage)</span>
+              <button class="cta-btn" style="padding: 6px 14px; font-size: 0.8rem; pointer-events: none;">Activate Zone 1 ➔</button>
+            </div>
+          </div>
+
+          <div class="zone-interactive-card active" id="zone-tile-2" onclick="selectZone(2)">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h4 style="color: var(--primary);">Zone 2: Clay Loam (East Plot - Primary)</h4>
+              <div>
+                <span style="font-size: 0.82rem; background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-right: 6px;">pH 6.6</span>
+                <span style="font-size: 1.25rem; font-weight: 900; color: #059669;" id="tile-m-2">26.5%</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Optimal water holding capacity (34% FC), balanced neutral chemistry & root aeration.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #059669;">Priority: NOMINAL</span>
+              <button class="cta-btn" style="padding: 6px 14px; font-size: 0.8rem; pointer-events: none;">Active Zone 2 ✓</button>
+            </div>
+          </div>
+
+          <div class="zone-interactive-card" id="zone-tile-4" onclick="selectZone(4)">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h4 style="color: var(--primary);">Zone 4: Sun-Exposed Ridge (North Slope)</h4>
+              <div>
+                <span style="font-size: 0.82rem; background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-right: 6px;">pH 6.4</span>
+                <span style="font-size: 1.25rem; font-weight: 900; color: #ea580c;" id="tile-m-4">19.5%</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Elevated solar radiation, +1.8°C higher canopy temperature, elevated VPD.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #ea580c;">Priority: URGENT (Solar Demand)</span>
+              <button class="cta-btn" style="padding: 6px 14px; font-size: 0.8rem; pointer-events: none;">Activate Zone 4 ➔</button>
+            </div>
+          </div>
+
+          <div class="zone-interactive-card" id="zone-tile-3" onclick="selectZone(3)">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <h4 style="color: var(--primary);">Zone 3: Lowland Alluvial (South Basin)</h4>
+              <div>
+                <span style="font-size: 0.82rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-right: 6px;">pH 7.1</span>
+                <span style="font-size: 1.25rem; font-weight: 900; color: #0284c7;" id="tile-m-3">34.0%</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Deep moisture retention (38% FC), mineral-rich alkaline alluvial runoff basin.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #0284c7;">Priority: LOW (Hypoxia Risk)</span>
+              <button class="cta-btn" style="padding: 6px 14px; font-size: 0.8rem; pointer-events: none;">Activate Zone 3 ➔</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 4: Smart Irrigation & Carbon/Energy Optimizer -->
+    <!-- ================================================================= -->
+    <div class="concept-panel" id="view-irrigation">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🚜 Smart Prescriptive Irrigation & Carbon Optimizer</h2>
+            <p>Automated conversion of digital twin moisture deficits into variable-rate pump commands, power savings, and carbon offsets.</p>
+          </div>
+        </div>
+
+        <div class="optimizer-cockpit">
+          <div class="opt-stat">
+            <h4>💧 Variable-Rate Water Need</h4>
+            <div class="opt-num adv-water">9.8 mm (98.0 m³/ha)</div>
+            <p style="font-size: 0.8rem; color: #a7f3d0; margin-top: 4px;">Targeted root zone replenishment</p>
+          </div>
+
+          <div class="opt-stat">
+            <h4>⏱️ Pump Runtime & Tariff</h4>
+            <div class="opt-num adv-pump">2.18 hrs (131 mins)</div>
+            <p style="font-size: 0.8rem; color: #a7f3d0; margin-top: 4px;">Off-Peak Cost: <strong class="adv-cost">₹38.20</strong> (04:00-07:00 AM)</p>
+          </div>
+
+          <div class="opt-stat">
+            <h4>⚡ Energy & Carbon Offset</h4>
+            <div class="opt-num adv-energy">117.6 kWh</div>
+            <p style="font-size: 0.8rem; color: #a7f3d0; margin-top: 4px;">Avoided Emissions: <strong class="adv-co2">52.9 kg CO₂e</strong></p>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 20px; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <h4 style="color: var(--primary);">📄 Export Official Agronomic Audit Record</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">Download timestamped audit log containing all sensor values and AI decision rationales.</p>
+          </div>
+          <button id="download-audit-btn" class="cta-btn" style="padding: 10px 22px; cursor: pointer; border: none;">📥 Download Audit Record (.md)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 5: Weather Disaster & What-If Stress Sandbox -->
+    <!-- ================================================================= -->
+    <div class="concept-panel" id="view-sandbox">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🎮 Environmental Stress & Disaster Sandbox</h2>
+            <p>Trigger instant simulated shocks to evaluate digital twin resilience and real-time model responsiveness.</p>
+          </div>
+        </div>
+
+        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 10px; text-transform: uppercase;">Instant Stress Presets:</label>
+        <div class="preset-grid">
+          <button class="preset-button" data-preset="heatwave">
+            <span style="font-size: 1.5rem;">☀️</span>
+            <div>
+              <div>Extreme Heatwave</div>
+              <small style="color: var(--text-muted);">39.5°C, High VPD</small>
+            </div>
+          </button>
+
+          <button class="preset-button" data-preset="monsoon">
+            <span style="font-size: 1.5rem;">⛈️</span>
+            <div>
+              <div>Monsoon Storm</div>
+              <small style="color: var(--text-muted);">32mm Rain, Cool</small>
+            </div>
+          </button>
+
+          <button class="preset-button" data-preset="drought">
+            <span style="font-size: 1.5rem;">🏜️</span>
+            <div>
+              <div>Flash Drought Shock</div>
+              <small style="color: var(--text-muted);">Moisture Crash, Stress</small>
+            </div>
+          </button>
+
+          <button class="preset-button" data-preset="flowering">
+            <span style="font-size: 1.5rem;">🌸</span>
+            <div>
+              <div>Flowering Window</div>
+              <small style="color: var(--text-muted);">Critical Sensitivity</small>
+            </div>
+          </button>
+        </div>
+
+        <!-- Sandbox Sliders -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-top: 16px;">
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
+              <span>Root Soil Moisture Content:</span>
+              <span id="label-moist" style="color: var(--primary);">26.5%</span>
+            </div>
+            <input type="range" id="slider-moist" min="5" max="45" step="0.5" value="26.5" style="width: 100%; accent-color: var(--accent);">
+          </div>
+
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
+              <span>Canopy Air Temperature:</span>
+              <span id="label-temp" style="color: var(--primary);">28.0°C</span>
+            </div>
+            <input type="range" id="slider-temp" min="15" max="46" step="0.5" value="28.0" style="width: 100%; accent-color: var(--accent);">
+          </div>
+
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px;">
+              <span>24-Hour Rainfall:</span>
+              <span id="label-rain" style="color: var(--primary);">1.5 mm</span>
+            </div>
+            <input type="range" id="slider-rain" min="0" max="40" step="0.5" value="1.5" style="width: 100%; accent-color: var(--accent);">
+          </div>
+
+          <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 14px; margin-top: 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; color: #be123c;">
+              <input type="checkbox" id="check-stress" style="width: 18px; height: 18px; accent-color: #be123c;">
+              ⚠️ Inject Sudden Sub-Surface Moisture Crash (-12% Points Shock)
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 6: DTSM Architecture & Scientific Verification -->
+    <!-- ================================================================= -->
+    <div class="concept-panel" id="view-architecture">
+      <div class="concept-card">
+        <div class="concept-header">
+          <div>
+            <h2>🔬 System Architecture & DTSM Pipeline Flow</h2>
+            <p>Physics-guided state fusion pipeline from 5-minute raw sensor inputs to calibrated uncertainty bounds.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; text-align: center;">
+            <h5 style="color: var(--primary); margin-bottom: 6px;">1. Telemetry Sensing</h5>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">5-min soil moisture (0-60cm), air temp, VPD, GDD & rain</p>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; text-align: center;">
+            <h5 style="color: var(--primary); margin-bottom: 6px;">2. DTSM Fusion</h5>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">EWMA noise filtering + multi-scale lag vectors (1h, 6h, 24h)</p>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; text-align: center;">
+            <h5 style="color: var(--primary); margin-bottom: 6px;">3. Multi-Model AI</h5>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Random Forest, SVM (RBF), pure NumPy LSTM</p>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; text-align: center;">
+            <h5 style="color: var(--primary); margin-bottom: 6px;">4. Uncertainty Bounds</h5>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Tree-votes, Platt scaling, MC-Dropout ±σ envelope</p>
+          </div>
+        </div>
+
+        <h4 style="color: var(--primary); margin-bottom: 8px;">💰 Agronomic ROI & Resource Conservation (90-Day Simulation)</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Computed by simulating the identical 90-day season under <strong>Fixed-Schedule Flood</strong> vs. <strong>Static Rule-Based</strong> vs. <strong>AI-Driven Digital Twin</strong> irrigation strategies (Indian Agricultural Tariff: Off-peak ₹3.25/kWh, Peak ₹6.80/kWh):
+        </p>
+
+        <!-- KPI Cards computed from simulation -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #10b981;">
+            <div style="font-size: 2.1rem; font-weight: 900; color: #059669;" id="roi-water-val">223.5 m³</div>
+            <div style="font-weight: 700; color: var(--primary);">Water Conserved / ha</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">3.4% reduction vs. calendar flood</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #059669;">
+            <div style="font-size: 2.1rem; font-weight: 900; color: #059669;" id="roi-cost-val">₹3,666 / ha</div>
+            <div style="font-weight: 700; color: var(--primary);">Electricity Cost Reduction</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">40.1% power savings via Time-of-Use</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #0284c7;">
+            <div style="font-size: 2.1rem; font-weight: 900; color: #0284c7;" id="roi-co2-val">38.0 kg CO₂e</div>
+            <div style="font-weight: 700; color: var(--primary);">Carbon Avoided / ha</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Direct CEA grid emission offset</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #7c3aed;">
+            <div style="font-size: 2.1rem; font-weight: 900; color: #7c3aed;">+25.4 q/ha</div>
+            <div style="font-weight: 700; color: var(--primary);">Harvest Yield Gain</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">21.0 stress-days prevented (49.6 vs 24.1 q/ha)</p>
+          </div>
+        </div>
+
+        <!-- 3-Strategy Comparison Table -->
+        <div style="overflow-x: auto; margin-top: 10px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+            <thead>
+              <tr style="background: #f1f5f9; color: #334155; border-bottom: 2px solid #cbd5e1;">
+                <th style="padding: 10px 12px;">Irrigation Strategy</th>
+                <th style="padding: 10px 12px;">Water Used (m³/ha)</th>
+                <th style="padding: 10px 12px;">Power Cost (₹ INR/ha)</th>
+                <th style="padding: 10px 12px;">Stress-Days</th>
+                <th style="padding: 10px 12px;">Yield (Quintals/ha)</th>
+                <th style="padding: 10px 12px;">CO₂ Emissions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 10px 12px;"><strong>Fixed-Schedule Flood (Traditional)</strong></td>
+                <td style="padding: 10px 12px;">6,480 m³</td>
+                <td style="padding: 10px 12px;">₹9,131.04</td>
+                <td style="padding: 10px 12px;">25.5 days</td>
+                <td style="padding: 10px 12px;">24.12 q/ha</td>
+                <td style="padding: 10px 12px;">1,101.1 kg</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0; background: #fafafa;">
+                <td style="padding: 10px 12px;"><strong>Static Rule-Based (Moist &lt; Thresh)</strong></td>
+                <td style="padding: 10px 12px;">5,765 m³</td>
+                <td style="padding: 10px 12px;">₹6,635.36</td>
+                <td style="padding: 10px 12px;">13.3 days</td>
+                <td style="padding: 10px 12px;">38.85 q/ha</td>
+                <td style="padding: 10px 12px;">979.5 kg</td>
+              </tr>
+              <tr style="background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-weight: 700; color: #065f46;">
+                <td style="padding: 10px 12px;"><strong>AI-Driven Digital Twin (Ours)</strong></td>
+                <td style="padding: 10px 12px;">6,256 m³</td>
+                <td style="padding: 10px 12px;">₹5,464.90</td>
+                <td style="padding: 10px 12px;">4.5 days</td>
+                <td style="padding: 10px 12px;">49.55 q/ha</td>
+                <td style="padding: 10px 12px;">1,063.1 kg</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>AgriTwin AI — Software Simulation Module & Digital Twin Platform</strong></p>
+    <p style="opacity: 0.7; font-size: 0.8rem; margin-top: 6px;">Built with Scikit-Learn, NumPy, Streamlit & Modern Web Technologies.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
